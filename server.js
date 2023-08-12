@@ -1,15 +1,11 @@
+const db = require('./config/connection');
 const express = require('express');
+const inquirer = require('inquirer');
 // Import and require mysql2
-const mysql = require('mysql2');
+
 require('console.table');
 const CLI = require('./lib/cli.js');
-
 const cli = new CLI();
-
-const result= cli.run();
-console.log(result);
-
-
 const PORT = process.env.PORT || 3001;
 const app = express();
 
@@ -17,18 +13,23 @@ const app = express();
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// Connect to database
-const db = mysql.createConnection(
-  {
-    host: 'localhost',
-    // MySQL username,
-    user: 'root',
-    // TODO: Add MySQL password here
-    password: 'abc123',
-    database: 'employees_db'
-  },
-  console.log(`Connected to the employee_db database.`)
-);
+cli.run()
+.then((res) => {
+  switch (res.choices) {
+    case 'Add Role':
+        addRole();
+        break;
+
+    default:
+        break;
+}
+return res.choices; 
+})
+ .catch((err) => {
+   console.log(err);
+   console.log('Oops. Something went wrong.');
+ });
+
 
 // View all departments
 app.get('/api/department', (req, res) => {
@@ -109,25 +110,74 @@ app.post('/api/department', ({ body }, res) => {
   });
 });
 //Add role
-app.post('/api/role', ({ body }, res) => {
-  const sql = `INSERT INTO role(title,salary,department_id)
-  VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
-  const params = [body.role,body.salary,body.department]; 
-  
-  db.query(sql, params, (err, result) => {
-    
+function addRole() {
+  const sql = `SELECT department_name FROM department`;
+  let departmentList=[];
+  db.query(sql,(err, rows) => {
     if (err) {
-      res.status(400).json({ error: err.message });
-      return;
+      console.log(err.message);
+       return;
     }
-   
-    res.json({
-      message: 'success',
-      data:body
+    departmentList=  rows.map((row)=>{
+      return row['department_name']
+    });    
+     inquirer.prompt([
+      { 
+        type: 'input',
+        name: 'role',
+        message: 'What is name of role?' 
+      },
+      { 
+        type: 'input',
+        name: 'salary',
+        message: 'What is salary?' 
+      },
+      { 
+        type: 'list',
+        name: 'departmentId',
+        message: 'Select department',
+        choices: departmentList,
+      },    
+  ]) 
+  .then((body)=>{   
+    
+      const sql = `INSERT INTO role(title,salary,department_id)
+      VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
+      const params = [body.role,body.salary,body.department]; 
+      
+      db.query(sql, params, (err, result) => {
+        
+        if (err) {
+          console.log(err.message);          
+          return;
+        }      
+        
+        console.log(`Added ${params[0]} to database`)
+      });
     });
-    console.log(`Added ${params[0]} to database`)
   });
-});
+
+ 
+}
+  app.post('/api/role', ({ body }, res) => {
+    const sql = `INSERT INTO role(title,salary,department_id)
+    VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
+    const params = [body.role,body.salary,body.department]; 
+    
+    db.query(sql, params, (err, result) => {
+      
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+     
+      res.json({
+        message: 'success',
+        data:body
+      });
+      console.log(`Added ${params[0]} to database`)
+    });
+  });
 // Add employee
 app.post('/api/employee', ({ body }, res) => {
   const sql = `INSERT INTO employee (first_name,last_name,role_id,manager_id) VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),(SELECT e.id from employee e WHERE CONCAT_WS(e.first_name," ",e.last_name)=? ))`;
@@ -231,6 +281,6 @@ app.use((req, res) => {
   res.status(404).end();
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server running on port ${PORT}`);
+// });
