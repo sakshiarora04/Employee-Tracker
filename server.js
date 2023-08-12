@@ -1,7 +1,14 @@
 const express = require('express');
 // Import and require mysql2
 const mysql = require('mysql2');
-require('console.table')
+require('console.table');
+const CLI = require('./lib/cli.js');
+
+const cli = new CLI();
+
+const result= cli.run();
+console.log(result);
+
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -32,7 +39,7 @@ app.get('/api/department', (req, res) => {
       res.status(500).json({ error: err.message });
        return;
     }
-    console.table(rows);
+    console.table("All Departments", rows);
     res.json({
       message: 'success',
       data: rows
@@ -45,14 +52,14 @@ app.get('/api/roles', (req, res) => {
   FROM role
   LEFT JOIN department
   ON role.department_id = department.id
-  ORDER BY role.id;`;
+  ORDER BY role.id`;
   
   db.query(sql, (err, rows) => {
     if (err) {
       res.status(500).json({ error: err.message });
        return;
     }
-    console.table(rows);
+    console.table("All roles",rows);
     res.json({
       message: 'success',
       data: rows
@@ -68,7 +75,7 @@ app.get('/api/employees', (req, res) => {
   LEFT JOIN department d
   ON r.department_id= d.id
   LEFT JOIN employee m
-  ON e.manager_id= m.id;`;
+  ON e.manager_id= m.id`;
   
   db.query(sql, (err, rows) => {
     if (err) {
@@ -76,14 +83,14 @@ app.get('/api/employees', (req, res) => {
        return;
     }
    
-    console.table(rows);
+    console.table("All Employess", rows);
     res.json({
       message: 'success',
       data: rows
     });
   });
 });
-// Create a department
+// Add department
 app.post('/api/department', ({ body }, res) => {
   const sql = `INSERT INTO department (department_name)
     VALUES (?)`;
@@ -94,13 +101,70 @@ app.post('/api/department', ({ body }, res) => {
       res.status(400).json({ error: err.message });
       return;
     }
+   
     res.json({
       message: 'success',
       data: body
     });
   });
 });
-
+//Add role
+app.post('/api/role', ({ body }, res) => {
+  const sql = `INSERT INTO role(title,salary,department_id)
+  VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
+  const params = [body.role,body.salary,body.department]; 
+  
+  db.query(sql, params, (err, result) => {
+    
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+   
+    res.json({
+      message: 'success',
+      data:body
+    });
+    console.log(`Added ${params[0]} to database`)
+  });
+});
+// Add employee
+app.post('/api/employee', ({ body }, res) => {
+  const sql = `INSERT INTO employee (first_name,last_name,role_id,manager_id) VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),(SELECT e.id from employee e WHERE CONCAT_WS(e.first_name," ",e.last_name)=? ))`;
+  const params = [body.first_name,body.last_name,body.role,body.manager]; 
+  
+  db.query(sql, params, (err, result) => {
+    
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+   
+    res.json({
+      message: 'success',
+      data:body
+    });
+    console.log(`Added ${params[0]} ${params[1]} to database`)
+  });
+});
+//View employees by manager
+// app.get('/api/manager_id', (req, res) => {
+//   const sql = `SELECT CONCAT("Kevin"," ","Tupik") As Manager, CONCAT(first_name," ",last_name) AS Employee,
+//   FROM employee 
+//   WHERE manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp  WHERE emp.first_name="Kevin" and emp.last_name="Tupik")`;
+  
+//   db.query(sql, (err, rows) => {
+//     if (err) {
+//       res.status(500).json({ error: err.message });
+//        return;
+//     }
+//     console.table("All roles",rows);
+//     res.json({
+//       message: 'success',
+//       data: rows
+//     });
+//   });
+// });
 
 
 // // Delete a movie
