@@ -1,6 +1,7 @@
 const express = require('express');
 // Import and require mysql2
 const mysql = require('mysql2');
+require('console.table')
 
 const PORT = process.env.PORT || 3001;
 const app = express();
@@ -74,6 +75,7 @@ app.get('/api/employees', (req, res) => {
       res.status(500).json({ error: err.message });
        return;
     }
+   
     console.table(rows);
     res.json({
       message: 'success',

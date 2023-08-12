@@ -37,11 +37,14 @@
 -- SET manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp  WHERE emp.first_name="Kevin" and emp.last_name="Tupik")
 -- WHERE first_name="Sa" and last_name="Arora";
 
+
 -- View employees by manager
--- SELECT CONCAT("Kevin"," ","Tupik") As Manager, CONCAT(first_name," ",last_name) AS Employee, FROM employee WHERE manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp  WHERE emp.first_name="Kevin" and emp.last_name="Tupik");
+-- SELECT CONCAT("Kevin"," ","Tupik") As Manager, CONCAT(first_name," ",last_name) AS Employee,
+--  FROM employee 
+--  WHERE manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp  WHERE emp.first_name="Kevin" and emp.last_name="Tupik");
 
 -- View employees by department
--- SELECT d.department_name,CONCAT(e.first_name," ",e.last_name) AS Employees FROM employee e
+-- SELECT e.id,CONCAT(e.first_name," ",e.last_name) AS Employees, r.title FROM employee e
 -- JOIN role r
 -- ON e.role_id=r.id
 -- JOIN department d   
