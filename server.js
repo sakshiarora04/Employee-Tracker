@@ -1,12 +1,15 @@
 const db = require("./config/connection");
-const express = require("express"); // Import Express.js
-const inquirer = require("inquirer");
 // Import and require mysql2
 const app = express();
 const cTable = require("console.table");
 const CLI = require("./lib/cli.js");
+const chalk = require('chalk');
 const cli = new CLI();
-
+console.log(chalk.cyan.bold('======================================'));
+console.log(``);
+console.log(chalk.green.bold('           EMPLOYEE TRACKER           '));
+console.log(``);
+console.log(chalk.cyan.bold('======================================'));
 class Query {
   main() {
     cli
@@ -47,13 +50,13 @@ class Query {
             this.addEmployee();
             break;
           case "Remove Department":
-            addRole();
+            this.deleteDepartment();
             break;
           case "Remove Role":
-            addRole();
+            this.deleteRole();
             break;
           case "Remove Employee":
-            addRole();
+            this.deleteEmployee();
             break;
           default:
             console.log("Thank you! Bye");
@@ -121,42 +124,33 @@ viewEmployees(){
 }
 //View employees by manager
 viewEmployeesByManager(){
-  let managerList=[];
+ 
   const sqlManager='SELECT CONCAT(first_name," ",last_name) As manager FROM employee';
-  
-  db.promise().query(sqlManager)
-  .then(([managers])=>{      
-    managerList=managers.map((manager)=>{
-      return manager['manager'];        
-    })       
-      cli.viewManager(managerList)
-      .then((body)=>{          
-        const sql = `SELECT id, CONCAT(first_name," ",last_name) AS Employee
-        FROM employee 
-        WHERE manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp WHERE CONCAT(emp.first_name," ",emp.last_name)=?)`;
-        const params = [body.managerName];
-        db.query(sql, params, (err, rows) => {
-                  if (err) {
-                    console.log(err.message);
-                    return;
-                  }
-                  console.table(`\n All employees of manager '${params[0]}'`, rows);    
-                  this.main();                   
-                });                 
-      });     
+  this.getArray(sqlManager,'manager')
+  .then((managerList)=>{    
+    cli.viewManager(managerList)
+    .then((body)=>{          
+      const sql = `SELECT id, CONCAT(first_name," ",last_name) AS Employee
+      FROM employee 
+      WHERE manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp WHERE CONCAT(emp.first_name," ",emp.last_name)=?)`;
+      const params = [body.managerName];
+      db.query(sql, params, (err, rows) => {
+                if (err) {
+                  console.log(err.message);
+                  return;
+                }
+                console.table(`\n All employees of manager '${params[0]}'`, rows);    
+                this.main();                   
+              });                 
+    });   
   });  
 }
 // View employees by department
-viewEmployeesByDepartment(){
-  let departments=[];
-  const sqlDepartment='SELECT department_name FROM department';
-  
-  db.promise().query(sqlDepartment)
-  .then(([department])=>{      
-    departments=department.map((d)=>{
-      return d['department_name'];        
-    })       
-      cli.viewDepartment(departments)
+viewEmployeesByDepartment(){  
+  const sqlDepartment='SELECT department_name FROM department ORDER BY id';
+  this.getArray(sqlDepartment,'department_name')
+  .then((departments)=>{
+    cli.viewDepartment(departments)
       .then((body)=>{          
         const sql = `SELECT e.id,CONCAT(e.first_name," ",e.last_name) AS Employees, r.title FROM employee e
         JOIN role r
@@ -175,37 +169,33 @@ viewEmployeesByDepartment(){
                   this.main();                   
                 });                 
       });     
-  });
+  });  
 }
 //View the total utilized budget of a department
 viewEmployeesBudget(){
-  let departments=[];
-  const sqlDepartment='SELECT department_name FROM department';
   
-  db.promise().query(sqlDepartment)
-  .then(([department])=>{      
-    departments=department.map((d)=>{
-      return d['department_name'];        
-    })       
-      cli.viewDepartment(departments)
-      .then((body)=>{          
-        const sql = `SELECT d.department_name AS Department, SUM(r.salary) AS Total_Salaries FROM employee e
-        JOIN role r
-        ON e.role_id=r.id
-        JOIN department d   
-        ON r.department_id=d.id
-        WHERE d.department_name=?`;
-        const params = [body.departmentName];
-        db.query(sql, params, (err, rows) => {
-                  if (err) {
-                    console.log(err.message);
-                    return;
-                  }
-                  console.table(`\n Total utilized budget of department '${params[0]}'`, rows);    
-                  this.main();                   
-                });                 
-      });     
-  });
+  const sqlDepartment='SELECT department_name FROM department ORDER BY id';
+  this.getArray(sqlDepartment,'department_name')
+  .then((departments)=>{
+    cli.viewDepartment(departments)
+    .then((body)=>{          
+      const sql = `SELECT d.department_name AS Department, SUM(r.salary) AS Total_Salaries FROM employee e
+      JOIN role r
+      ON e.role_id=r.id
+      JOIN department d   
+      ON r.department_id=d.id
+      WHERE d.department_name=?`;
+      const params = [body.departmentName];
+      db.query(sql, params, (err, rows) => {
+                if (err) {
+                  console.log(err.message);
+                  return;
+                }
+                console.table(`\n Total utilized budget of department '${params[0]}'`, rows);    
+                this.main();                   
+              });                 
+    }); 
+  });  
 }
 //Add department
 addDepartment(){
@@ -219,7 +209,7 @@ addDepartment(){
       console.log({ error: err.message });
       return;
     }    
-    console.log(`\n Added ${params[0]} to database`);
+    console.log(`\n Added ${params[0]} department to database`);
     this.viewDepartments(); 
   });
     })  
@@ -242,7 +232,7 @@ addDepartment(){
               console.log(err.message);
               return;
             }
-            console.log(`\n Added ${params[0]} to database`);
+            console.log(`\n Added ${params[0]} role to database`);
             this.viewRoles(); 
           });
         });
@@ -273,12 +263,13 @@ addDepartment(){
                       console.log(err.message);
                       return;
                     }
-                    console.log(`\n Added ${params[0]} ${params[1]} to database`);
+                    console.log(`\n Added ${params[0]} ${params[1]} employee to database`);
                     this.viewEmployees();
                   });                 
         });     
     });  
 }
+//Update Employee role
 updateEmployeeRole() {
   const empRoleArr=[];     
   const sqlRole='SELECT title from role ORDER BY id';
@@ -349,6 +340,67 @@ updateEmployeeManagers() {
         });     
     });  
     
+}
+//delete department
+deleteDepartment(){
+  const sqlDepartment='SELECT department_name FROM department ORDER BY id';
+  this.getArray(sqlDepartment,'department_name')
+  .then((departments)=>{
+    cli.viewDepartment(departments)
+    .then((body)=>{
+      const sql = `DELETE FROM department WHERE department_name=?`; 
+      const params = [body.departmentName]; 
+  db.query(sql,params, (err, rows) => {
+    if (err) {
+      console.log({ error: err.message });
+      return;
+    }  
+    console.log(`\n department ${params[0]} deleted successfully!`);  
+    this.viewDepartments();      
+  }); 
+    });
+  }); 
+}
+//delete role
+deleteRole(){
+  const sqlRole='SELECT title FROM role ORDER BY id';
+  this.getArray(sqlRole,'title')
+  .then((roleList)=>{   
+    cli.viewRole(roleList)
+    .then((body)=>{
+      const sql = `DELETE FROM role WHERE title=?`; 
+      const params = [body.roleName]; 
+  db.query(sql,params, (err, rows) => {
+    if (err) {
+      console.log({ error: err.message });
+      return;
+    }   
+    console.log(`\n  role ${params[0]} deleted successfully`); 
+    this.viewRoles();      
+  }); 
+    });
+  }); 
+}
+//delete employee
+deleteEmployee(){
+  const sqlemployee='SELECT CONCAT(first_name," ",last_name) AS employee FROM employee';
+  this.getArray(sqlemployee,'employee')
+  .then((empList)=>{
+    const eList=this.createArrOfObjects(empList);
+    cli.viewEmp(eList)
+    .then((body)=>{
+      const sql = `DELETE FROM employee WHERE id=?`; 
+      const params = [body.empName]; 
+  db.query(sql,params, (err, rows) => {
+    if (err) {
+      console.log({ error: err.message });
+      return;
+    }   
+    console.log(`\n employee deleted successfully`); 
+    this.viewEmployees();      
+  }); 
+    });
+  }); 
 }
 async getArray(sql,value){
   let arr = [];
