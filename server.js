@@ -224,30 +224,12 @@ addDepartment(){
   });
     })  
 }
-getDepartmentArray(){
-    let departmentList = [];
-    return new Promise((resolve, reject) => {
-      const sql = `SELECT department_name FROM department ORDER BY id`;
-          db.promise().query(sql)
-           .then(([departments])=>{
-            departmentList = departments.map((department) => {
-              return department["department_name"];
-            });
-
-            resolve(departmentList);
-           })
-           .catch((err)=>{
-            console.log(err);
-            reject();
-           });
-
-          });
-     }
-     
+   
 
   //Add role
-  addRole() {   
-     this.getDepartmentArray()
+  addRole() { 
+    const sql = `SELECT department_name FROM department ORDER BY id`;  
+     this.getArray(sql,'department_name')
     .then((departmentList)=>{
      cli.addRoleQuestions(departmentList)
         .then((body) => {
@@ -269,30 +251,23 @@ getDepartmentArray(){
   }
   // Add Employee
   addEmployee() {
-    const employeeArr=[];
-    let roleList = [];
-    let managerList=[];
+    const employeeArr=[];    
     const sqlRole='SELECT title from role ORDER BY id';
     const sqlManager='SELECT CONCAT(first_name," ",last_name) As manager FROM employee';
-    db.promise().query(sqlRole)
-    .then(([roles])=>{      
-      roleList=roles.map((role)=>{
-        return role['title'];        
-      })  
-      employeeArr.push(roleList)    
-    })
-
-    db.promise().query(sqlManager)
-    .then(([managers])=>{      
-      managerList=managers.map((manager)=>{
-        return manager['manager'];        
-      })  
-        employeeArr.push(managerList);
+    this.getArray(sqlRole,'title')
+    .then((roleList)=>{      
+      employeeArr.push(roleList)
+     });
+     this.getArray(sqlManager,'manager')
+    .then((managerList)=>{ 
+      const mList=this.createArrOfObjects(managerList);
+        employeeArr.push(mList);
+        console.log(employeeArr)
         cli.addEmployeeQuestions(employeeArr)
         .then((body)=>{          
            const sql = `INSERT INTO employee (first_name,last_name,role_id,manager_id)
             VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),?)`;
-          const params = [body.first, body.last, body.role, body.manager+1];
+          const params = [body.first, body.last, body.role, body.manager];
           db.query(sql, params, (err, result) => {
                     if (err) {
                       console.log(err.message);
@@ -305,85 +280,59 @@ getDepartmentArray(){
     });  
 }
 updateEmployeeRole() {
-  const empRoleArr=[];   
-  let employeeList=[];  
-  let roleList=[]; 
+  const empRoleArr=[];     
   const sqlRole='SELECT title from role ORDER BY id';
     const sqlEmployee='SELECT CONCAT(first_name," ",last_name) As emp FROM employee';
-    db.promise().query(sqlRole)
-    .then(([roles])=>{      
-      roleList=roles.map((role)=>{
-        return role['title'];        
-      })  
-      empRoleArr.push(roleList)    
+    this.getArray(sqlRole,'title')
+    .then((roleList)=>{
+      const rList=this.createArrOfObjects(roleList);
+      empRoleArr.push(rList);
     })
-    db.promise().query(sqlEmployee)
-    .then(([employees])=>{      
-      employeeList=employees.map((employee)=>{
-        return employee['emp'];        
-      })
-      empRoleArr.push(employeeList);
-        cli.updateEmployee(empRoleArr)
-        .then((body)=>{          
-           const sql = `UPDATE employee
-           SET role_id=?
-           WHERE id=?`;
-          const params = [body.newRole+1, body.employeeName+1];
-          db.query(sql, params, (err, result) => {
-                    if (err) {
-                      console.log(err.message);
-                      return;
-                    }
-                    console.log(`\n Updated ${params[0]} for ${params[1]} to database`);
-                    this.viewEmployees();
-                  });                 
-        });     
-    });  
-    
+    this.getArray(sqlEmployee,'emp')
+    .then((employeeList)=>{
+      const empList=this.createArrOfObjects(employeeList);
+      empRoleArr.push(empList);
+      cli.updateEmployee(empRoleArr)
+      .then((body)=>{          
+         const sql = `UPDATE employee
+         SET role_id=?
+         WHERE id=?`;
+        const params = [body.newRole, body.employeeName];
+        console.log(params)
+        db.query(sql, params, (err, result) => {
+                  if (err) {
+                    console.log(err.message);
+                    return;
+                  }
+                  console.log(`\n Updated role for employee`);
+                  this.viewEmployees();
+                });                 
+      });
+    }); 
+
 }
 // Update employee managers
 updateEmployeeManagers() {
   const empArr=[];   
-  let employeeList=[];  
-  let managerList=[]; 
-  let empList=[];
-  let manList=[];
   const sqlManager='SELECT CONCAT(first_name," ",last_name) AS manager from employee';
     const sqlEmployee='SELECT CONCAT(first_name," ",last_name) As emp FROM employee ORDER BY id';
-    db.promise().query(sqlManager)
-    .then(([managers])=>{      
-      managerList=managers.map((manager)=>{
-        return manager['manager'];        
-      }) 
-       managerList.forEach(m,i => {
-        const obj={};       
-        obj.name=m;
-        obj.value=i+1;
-         manList.push(obj);
-       });
-      empArr.push(manList)    
+    this.getArray(sqlManager,'manager')
+    .then((managerList)=>{
+      const manList=this.createArrOfObjects(managerList);
+      empArr.push(manList);
     })
-    db.promise().query(sqlEmployee)
-    .then(([employees])=>{      
-      employeeList=employees.map((employee)=>{
-        return employee['emp'];        
-      })
+    this.getArray(sqlEmployee,'emp')
+    .then((employeesList)=>{
+      const empList=this.createArrOfObjects(employeesList);
+      empArr.push(empList);
       
-      for (let i = 0; i < employeeList.length; i++) {
-       let obj={};       
-       obj.name=employeeList[i];
-       obj.value=i+1;
-        empList.push(obj);
-      }
-      empArr.push(empList);  
-      console.log(empArr)    
         cli.updateEmpManager(empArr)
         .then((body)=>{          
            const sql = `Update employee 
            SET manager_id=?
            WHERE id=?`;
           const params = [body.newManager, body.employeeName];  
-          console.log(params)               
+                         
           if(params[0]===params[1]){
             console.log('Invalid manager selected');
             this.main();
@@ -400,6 +349,35 @@ updateEmployeeManagers() {
         });     
     });  
     
+}
+async getArray(sql,value){
+  let arr = [];
+  return new Promise((resolve, reject) => {    
+        db.promise().query(sql)
+         .then(([rows])=>{
+          arr = rows.map((row) => {
+            return row[value];
+          });
+
+          resolve(arr);
+         })
+         .catch((err)=>{
+          console.log(err);
+          reject();
+         });
+
+        });
+   }
+   
+createArrOfObjects(List){
+  let mainList=[];
+  List.forEach((m,i) => {
+    const obj={};       
+    obj.name=m;
+    obj.value=i+1;
+     mainList.push(obj);
+   });
+return mainList;
 }
 }
 const query = new Query();
