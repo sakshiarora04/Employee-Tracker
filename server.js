@@ -139,7 +139,7 @@ addDepartment(){
 getDepartmentArray(){
     let departmentList = [];
     return new Promise((resolve, reject) => {
-      const sql = `SELECT department_name FROM department`;
+      const sql = `SELECT department_name FROM department ORDER BY id`;
           db.promise().query(sql)
            .then(([departments])=>{
             departmentList = departments.map((department) => {
@@ -161,7 +161,7 @@ getDepartmentArray(){
   addRole() {   
      this.getDepartmentArray()
     .then((departmentList)=>{
-     cli.addQuestions(departmentList)
+     cli.addRoleQuestions(departmentList)
         .then((body) => {
           const sql = `INSERT INTO role(title,salary,department_id)
         VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
@@ -184,11 +184,10 @@ getDepartmentArray(){
     const employeeArr=[];
     let roleList = [];
     let managerList=[];
-    const sqlRole='SELECT title from role';
+    const sqlRole='SELECT title from role ORDER BY id';
     const sqlManager='SELECT CONCAT(first_name," ",last_name) As manager FROM employee';
     db.promise().query(sqlRole)
-    .then(([roles])=>{
-      
+    .then(([roles])=>{      
       roleList=roles.map((role)=>{
         return role['title'];        
       })  
@@ -201,11 +200,11 @@ getDepartmentArray(){
         return manager['manager'];        
       })  
         employeeArr.push(managerList);
-        cli.addEmployeeQuestions()
-        .then((body)=>{
-           const sql = `INSERT INTO role(title,salary,department_id)
-             VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
-          const params = [body.first, body.last, body.roleId,body.managerId];
+        cli.addEmployeeQuestions(employeeArr)
+        .then((body)=>{          
+           const sql = `INSERT INTO employee (first_name,last_name,role_id,manager_id)
+            VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),(SELECT e.id from employee e WHERE CONCAT(e.first_name," ",e.last_name)=?))`;
+          const params = [body.first, body.last, body.roleId, body.managerId];
           db.query(sql, params, (err, result) => {
                     if (err) {
                       console.log(err.message);
@@ -215,8 +214,7 @@ getDepartmentArray(){
                     this.viewEmployees();
                   });                 
         });     
-    });
-  
+    });  
 }
 }
 const query = new Query();
