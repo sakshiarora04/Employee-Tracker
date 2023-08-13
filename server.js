@@ -20,7 +20,7 @@ class Query {
             this.viewRoles();
             break;
           case "View All Employees":
-            addRole();
+            this.viewEmployees();
             break;
           case "View employees by manager":
             addRole();
@@ -38,13 +38,13 @@ class Query {
             addRole();
             break;
           case "Add Department":
-            addRole();
+            this.addDepartment();
             break;
           case "Add Role":
             this.addRole();
             break;
           case "Add Employee":
-            addRole();
+            this.addEmployee();
             break;
           case "Remove Department":
             addRole();
@@ -71,16 +71,16 @@ class Query {
       });
   }
   // View all departments
-  async viewDepartments() {
-    const sql = `SELECT id, department_name AS title FROM department`;
-    await db.promise().query(sql)
-      .then(([rows]) => {
-        console.table("All Departments", rows);
-      })
-      .catch((err) => {
-        console.log(err);
-        
-      });    
+   viewDepartments() {
+    const sql = `SELECT id, department_name AS title FROM department`;      
+      db.query(sql, (err, rows) => {
+        if (err) {
+          console.log({ error: err.message });
+          return;
+        }
+        console.table("All Departments", rows);  
+        this.main();       
+      });      
   }
  //View all roles
  viewRoles(){
@@ -89,50 +89,82 @@ class Query {
   LEFT JOIN department
   ON role.department_id = department.id
   ORDER BY role.id`;
-     db.promise().query(sql)
-      .then(([rows]) => {
-        console.table("All Roles", rows);
-      })
-      .catch((err) => {
-        console.log(err);
-        
-      });
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.log({ error: err.message });
+      return;
+    }
+    console.table("All roles", rows);    
+    this.main(); 
+  }); 
   
  }
+//View all employees
+viewEmployees(){
+  const sql = `SELECT e.id, e.first_name, e.last_name, r.title, d.department_name AS department, r.salary, CONCAT(m.first_name," ",m.last_name) As manager
+  FROM employee e
+  LEFT JOIN role r
+  ON e.role_id= r.id
+  LEFT JOIN department d
+  ON r.department_id= d.id
+  LEFT JOIN employee m
+  ON e.manager_id= m.id`;
 
-  //  getDepartmentArray(){
-  //   let departmentList = [];
-  //   return new Promise((resolve, reject) => {
-  //     const sql = `SELECT department_name FROM department`;
-  //         db.promise().query(sql)
-  //          .then(([rows])=>{
-  //           departmentList = rows.map((row) => {
-  //             return row["department_name"];
-  //           });
-
-  //           resolve(departmentList);
-  //          })
-  //          .catch((err)=>{
-  //           console.log(err);
-  //           reject();
-  //          })
-
-  //         });
-
-  //    }
-  //Add role
-  async addRole() {
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.log({ error: err.message });
+      return;
+    }
+    console.table("All Employess", rows);
+    this.main();    
+  });
+}
+//Add department
+addDepartment(){
+  const sql = `INSERT INTO department (department_name)
+    VALUES (?)`;
+    cli.addDepartmentQuestions()
+    .then((body)=>{
+      const params = [body.department]; 
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      console.log({ error: err.message });
+      return;
+    }    
+    console.log(`Added ${params[0]} to database`);
+    this.viewDepartments(); 
+  });
+    })  
+}
+getDepartmentArray(){
     let departmentList = [];
-    const sql = `SELECT department_name FROM department`;
-    await db.promise().query(sql)
-      .then(([rows]) => {
-        departmentList = rows.map((row) => {
-          return row["department_name"];
-        });
-        cli.addRoleQuestions(departmentList)
+    return new Promise((resolve, reject) => {
+      const sql = `SELECT department_name FROM department`;
+          db.promise().query(sql)
+           .then(([departments])=>{
+            departmentList = departments.map((department) => {
+              return department["department_name"];
+            });
+
+            resolve(departmentList);
+           })
+           .catch((err)=>{
+            console.log(err);
+            reject();
+           })
+
+          });
+     }
+     
+
+  //Add role
+  addRole() {   
+     this.getDepartmentArray()
+    .then((departmentList)=>{
+     cli.addQuestions(departmentList)
         .then((body) => {
           const sql = `INSERT INTO role(title,salary,department_id)
-             VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
+        VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
           const params = [body.role, body.salary, body.departmentId];
 
           db.query(sql, params, (err, result) => {
@@ -141,34 +173,51 @@ class Query {
               return;
             }
             console.log(`Added ${params[0]} to database`);
+            this.viewRoles(); 
           });
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        // reject();
-      });
-    // await this.getDepartmentArray()
-    // .then((departmentList)=>{
-    //  cli.addRoleQuestions(departmentList)
-    //     .then((body) => {
-    //       const sql = `INSERT INTO role(title,salary,department_id)
-    //     VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
-    //       const params = [body.role, body.salary, body.departmentId];
-
-    //       db.query(sql, params, (err, result) => {
-    //         if (err) {
-    //           console.log(err.message);
-    //           return;
-    //         }
-    //         console.log(`Added ${params[0]} to database`);
-    //       });
-    //   //     });
-    // })
-
-    // main();
+    });
+       
   }
-}
+  // Add Employee
+  addEmployee() {
+    const employeeArr=[];
+    let roleList = [];
+    let managerList=[];
+    const sqlRole='SELECT title from role';
+    const sqlManager='SELECT CONCAT(first_name," ",last_name) As manager FROM employee';
+    db.promise().query(sqlRole)
+    .then(([roles])=>{
+      
+      roleList=roles.map((role)=>{
+        return role['title'];        
+      })  
+      employeeArr.push(roleList)    
+    })
 
+    db.promise().query(sqlManager)
+    .then(([managers])=>{      
+      managerList=managers.map((manager)=>{
+        return manager['manager'];        
+      })  
+        employeeArr.push(managerList);
+        cli.addEmployeeQuestions()
+        .then((body)=>{
+           const sql = `INSERT INTO role(title,salary,department_id)
+             VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
+          const params = [body.first, body.last, body.roleId,body.managerId];
+          db.query(sql, params, (err, result) => {
+                    if (err) {
+                      console.log(err.message);
+                      return;
+                    }
+                    console.log(`Added ${params[0]} ${params[1]} to database`);
+                    this.viewEmployees();
+                  });                 
+        });     
+    });
+  
+}
+}
 const query = new Query();
 query.main();
