@@ -23,7 +23,7 @@ class Query {
             this.viewEmployees();
             break;
           case "View employees by manager":
-            addRole();
+            this.viewEmployeesByManager();
             break;
           case "View employees by department":
             addRole();
@@ -119,6 +119,37 @@ viewEmployees(){
     this.main();    
   });
 }
+//View employees by manager
+viewEmployeesByManager(){
+  let managerList=[];
+  const sqlManager='SELECT CONCAT(first_name," ",last_name) As manager FROM employee';
+  
+  db.promise().query(sqlManager)
+  .then(([managers])=>{      
+    managerList=managers.map((manager)=>{
+      return manager['manager'];        
+    })       
+      cli.viewManager(managerList)
+      .then((body)=>{          
+        const sql = `SELECT id, CONCAT(first_name," ",last_name) AS Employee
+        FROM employee 
+        WHERE manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp WHERE CONCAT(emp.first_name," ",emp.last_name)=?)`;
+        const params = [body.managerName];
+        db.query(sql, params, (err, rows) => {
+                  if (err) {
+                    console.log(err.message);
+                    return;
+                  }
+                  console.table(`All employees of manager '${params[0]}'`, rows);    
+                  this.main();                   
+                });                 
+      });     
+  });  
+}
+// View employees by department
+viewEmployeesByDepartment(){
+  
+}
 //Add department
 addDepartment(){
   const sql = `INSERT INTO department (department_name)
@@ -165,7 +196,7 @@ getDepartmentArray(){
         .then((body) => {
           const sql = `INSERT INTO role(title,salary,department_id)
         VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
-          const params = [body.role, body.salary, body.departmentId];
+          const params = [body.role, body.salary, body.department];
 
           db.query(sql, params, (err, result) => {
             if (err) {
@@ -204,7 +235,7 @@ getDepartmentArray(){
         .then((body)=>{          
            const sql = `INSERT INTO employee (first_name,last_name,role_id,manager_id)
             VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),(SELECT e.id from employee e WHERE CONCAT(e.first_name," ",e.last_name)=?))`;
-          const params = [body.first, body.last, body.roleId, body.managerId];
+          const params = [body.first, body.last, body.role, body.manager];
           db.query(sql, params, (err, result) => {
                     if (err) {
                       console.log(err.message);

@@ -39,7 +39,7 @@
 
 
 -- View employees by manager
--- SELECT CONCAT("Kevin"," ","Tupik") As Manager, CONCAT(first_name," ",last_name) AS Employee,
+-- SELECT CONCAT("Kevin"," ","Tupik") As Manager, CONCAT(first_name," ",last_name) AS Employee
 --  FROM employee 
 --  WHERE manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp  WHERE emp.first_name="Kevin" and emp.last_name="Tupik");
 
