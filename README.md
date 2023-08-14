@@ -24,17 +24,10 @@ To run locally on command line
    ```
    npm init
    ```
-3. Install required dependencies given in package.json:
+3. Install required dependencies given in package.json by running command:
 
    ```
-    "boxen": "4.0",
-    "cfonts": "^3.2.0",
-    "chalk": "^4.1.0",
-    "console.table": "^0.10.0",
-    "dotenv": "^8.2.0",
-    "inquirer": "^8.2.4",
-    "jshint": "^2.12.0",
-    "mysql2": "^2.2.5"
+   npm install
 
    ```
 4. In the end, run command-
