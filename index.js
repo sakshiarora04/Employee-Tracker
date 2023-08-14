@@ -313,6 +313,7 @@ addDepartment(){
      // function to create array of managers by passing sql command and column name
      this.getArray(sqlManager,'manager')
     .then((managerList)=>{ 
+      managerList.push('No manager');     
       //create array of objects containing name and value to get particular id of selected manager------- without generating array of objects- returned incorrect value in case of managers of same name
       const mList=this.createArrOfObjects(managerList);
       //generate array of two arrays-rolelist and managerlist and pass to ask questions 
@@ -390,6 +391,7 @@ updateEmployeeManagers() {
        // function to create array of managers by passing sql command and column name
     this.getArray(sqlManager,'manager')
     .then((managerList)=>{
+      managerList.push('No manager');
       //create array of objects containing name and value to get particular id of selected manager------- without generating array of objects- can return manager with same name
       const manList=this.createArrOfObjects(managerList);
       empArr.push(manList);
