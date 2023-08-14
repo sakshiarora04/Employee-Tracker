@@ -1,15 +1,10 @@
 const db = require("./config/connection");
-// Import and require mysql2
-const app = express();
-const cTable = require("console.table");
-const CLI = require("./lib/cli.js");
+
 const chalk = require('chalk');
+const figlet = require('figlet');
+const CLI = require("./lib/cli.js");
 const cli = new CLI();
-console.log(chalk.cyan.bold('======================================'));
-console.log(``);
-console.log(chalk.green.bold('           EMPLOYEE TRACKER           '));
-console.log(``);
-console.log(chalk.cyan.bold('======================================'));
+
 class Query {
   main() {
     cli
@@ -355,7 +350,7 @@ deleteDepartment(){
       console.log({ error: err.message });
       return;
     }  
-    console.log(`\n department ${params[0]} deleted successfully!`);  
+    console.log(`\n deleted department ${params[0]} deleted successfully!`);  
     this.viewDepartments();      
   }); 
     });
@@ -432,5 +427,17 @@ createArrOfObjects(List){
 return mainList;
 }
 }
-const query = new Query();
-query.main();
+db.connect((error) => {
+  if (error) throw error;
+  console.log(chalk.yellow.bold(`====================================================================================`));
+  console.log(``);
+  console.log(chalk.greenBright.bold(figlet.textSync('Employee Tracker')));
+  console.log(``);
+  console.log(`                                                          ` + chalk.greenBright.bold('Created By: Joseph DeWoody'));
+  console.log(``);
+  console.log(chalk.yellow.bold(`====================================================================================`));
+  const query = new Query();
+  query.main();
+});
+
+
