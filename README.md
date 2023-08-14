@@ -70,7 +70,7 @@ https://app.screencastify.com/manage/videos/5Lq38XcMqhazdMrvupHt
 
 The following images show the web application's appearance and functionality:
 
-* Overview working of all options
+* Overview- working of all options
 
     ![Homepage.](./assets/images/overview.gif)
 
