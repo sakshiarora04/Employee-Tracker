@@ -1,7 +1,8 @@
 const db = require("./config/connection");
-
+const cTable=require('console.table');
 const chalk = require('chalk');
-const figlet = require('figlet');
+const boxen = require('boxen');
+const cfonts = require('cfonts');
 const CLI = require("./lib/cli.js");
 const cli = new CLI();
 
@@ -76,6 +77,7 @@ class Query {
           console.log({ error: err.message });
           return;
         }
+        console.log(chalk.bold.bgCyan('\n Success!'))
         console.table("\n  All Departments", rows);  
         this.main();       
       });      
@@ -92,6 +94,7 @@ class Query {
       console.log({ error: err.message });
       return;
     }
+    console.log(chalk.bold.bgCyan('\n Success!'));
     console.table("\n  All roles", rows);    
     this.main(); 
   }); 
@@ -113,6 +116,7 @@ viewEmployees(){
       console.log({ error: err.message });
       return;
     }
+    console.log(chalk.bold.bgCyan('\n Success!'));
     console.table("All Employess", rows);
     this.main();    
   });
@@ -134,6 +138,7 @@ viewEmployeesByManager(){
                   console.log(err.message);
                   return;
                 }
+                console.log(chalk.bold.bgCyan('\n Success!'));
                 console.table(`\n All employees of manager '${params[0]}'`, rows);    
                 this.main();                   
               });                 
@@ -160,6 +165,7 @@ viewEmployeesByDepartment(){
                     console.log(err.message);
                     return;
                   }
+                  console.log(chalk.bold.bgCyan('\n Success!'));
                   console.table(`\n All employees of department '${params[0]}'`, rows);    
                   this.main();                   
                 });                 
@@ -186,6 +192,7 @@ viewEmployeesBudget(){
                   console.log(err.message);
                   return;
                 }
+                console.log(chalk.bold.bgCyan('\n Success!'));
                 console.table(`\n Total utilized budget of department '${params[0]}'`, rows);    
                 this.main();                   
               });                 
@@ -203,13 +210,13 @@ addDepartment(){
     if (err) {
       console.log({ error: err.message });
       return;
-    }    
+    }   
+    console.log(chalk.bold.bgCyan('\n Success!'));
     console.log(`\n Added ${params[0]} department to database`);
     this.viewDepartments(); 
   });
     })  
-}
-   
+}   
 
   //Add role
   addRole() { 
@@ -227,6 +234,7 @@ addDepartment(){
               console.log(err.message);
               return;
             }
+            console.log(chalk.bold.bgCyan('\n Success!'));
             console.log(`\n Added ${params[0]} role to database`);
             this.viewRoles(); 
           });
@@ -258,6 +266,7 @@ addDepartment(){
                       console.log(err.message);
                       return;
                     }
+                    console.log(chalk.bold.bgCyan('\n Success!'));
                     console.log(`\n Added ${params[0]} ${params[1]} employee to database`);
                     this.viewEmployees();
                   });                 
@@ -290,6 +299,7 @@ updateEmployeeRole() {
                     console.log(err.message);
                     return;
                   }
+                  console.log(chalk.bold.bgCyan('\n Success!'));
                   console.log(`\n Updated role for employee`);
                   this.viewEmployees();
                 });                 
@@ -329,6 +339,7 @@ updateEmployeeManagers() {
                       console.log(err.message);
                       return;
                     }
+                  console.log(chalk.bold.bgCyan('\n Success!'));
                    console.log(`\n Updated manager`);
                     this.viewEmployees();
                   });                 
@@ -349,7 +360,8 @@ deleteDepartment(){
     if (err) {
       console.log({ error: err.message });
       return;
-    }  
+    } 
+    console.log(chalk.bold.bgCyan('\n Success!')); 
     console.log(`\n deleted department ${params[0]} deleted successfully!`);  
     this.viewDepartments();      
   }); 
@@ -369,7 +381,8 @@ deleteRole(){
     if (err) {
       console.log({ error: err.message });
       return;
-    }   
+    }  
+    console.log(chalk.bold.bgCyan('\n Success!')); 
     console.log(`\n  role ${params[0]} deleted successfully`); 
     this.viewRoles();      
   }); 
@@ -390,7 +403,8 @@ deleteEmployee(){
     if (err) {
       console.log({ error: err.message });
       return;
-    }   
+    }
+    console.log(chalk.bold.bgCyan('\n Success!'));   
     console.log(`\n employee deleted successfully`); 
     this.viewEmployees();      
   }); 
@@ -405,7 +419,6 @@ async getArray(sql,value){
           arr = rows.map((row) => {
             return row[value];
           });
-
           resolve(arr);
          })
          .catch((err)=>{
@@ -429,13 +442,30 @@ return mainList;
 }
 db.connect((error) => {
   if (error) throw error;
-  console.log(chalk.yellow.bold(`====================================================================================`));
-  console.log(``);
-  console.log(chalk.greenBright.bold(figlet.textSync('Employee Tracker')));
-  console.log(``);
-  console.log(`                                                          ` + chalk.greenBright.bold('Created By: Joseph DeWoody'));
-  console.log(``);
-  console.log(chalk.yellow.bold(`====================================================================================`));
+  console.log(chalk.red.bold(`====================================================================================`));
+
+  const options= {
+    font: 'pallet',              // define the font face
+    align: 'left',              // define text alignment
+    colors: ['system'],         // define all colors
+    background: 'transparent',  // define the background color, you can also use `backgroundColor` here as key
+    letterSpacing: 4,           // define letter spacing
+    lineHeight: 1,              // define the line height
+    space: true,                // define if the output text should have empty lines on top and on the bottom
+    maxLength: '0',             // define how many character can be on one line
+    gradient: 'blue,green',            // define your two gradient colors
+    independentGradient: false, // define if you want to recalculate the gradient for each new line
+    transitionGradient: false,  // define if this is a transition between colors directly
+    env: 'node'                 // define the environment cfonts is being executed in
+  }
+
+  console.log(boxen(cfonts.render(`EMPLOYEE \n TRACKER`,options).string, { titleAlignment: 'center',padding: 1,
+  margin: 1,
+  borderStyle: "classic",
+  borderColor: "cyan",
+
+  }));
+  console.log(chalk.red.bold(`====================================================================================`));
   const query = new Query();
   query.main();
 });
