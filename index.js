@@ -219,8 +219,8 @@ class Query {
             console.log(err.message);
             return;
           }
-          if(!rows.length){
-            console.log('No results found')
+          if (!rows.length) {
+            console.log("No results found");
           }
           console.log(chalk.bold.bgCyan("\n Success!"));
           console.table(
@@ -348,15 +348,15 @@ class Query {
       'SELECT CONCAT(first_name," ",last_name) As emp FROM employee';
     // function to create array of roles by passing sql command and column name
     this.getArray(sqlRole, "title").then((roleList) => {
-      if(!roleList.length){
-        console.log('there are no roles to select')
+      if (!roleList.length) {
+        console.log("there are no roles to select");
       }
       empRoleArr.push(roleList);
     });
     // function to create array of employees by passing sql command and column name
     this.getArray(sqlEmployee, "emp").then((employeeList) => {
-      if(!employeeList.length){
-        console.log('there are no employees to select')
+      if (!employeeList.length) {
+        console.log("there are no employees to select");
       }
       //generate array of two arrays-rolelist and employeelist and pass to ask questions
       empRoleArr.push(employeeList);
@@ -391,16 +391,16 @@ class Query {
       'SELECT CONCAT(first_name," ",last_name) As emp FROM employee ORDER BY id';
     // function to create array of managers by passing sql command and column name
     this.getArray(sqlManager, "manager").then((managerList) => {
-      if(!managerList.length){
-        console.log('there are no manager to select')
+      if (!managerList.length) {
+        console.log("there are no manager to select");
       }
       managerList.push("No Manager");
       empArr.push(managerList);
     });
     // function to create array of employees by passing sql command and column name
     this.getArray(sqlEmployee, "emp").then((employeesList) => {
-      if(!employeesList.length){
-        console.log('there are no employees to select')
+      if (!employeesList.length) {
+        console.log("there are no employees to select");
       }
       empArr.push(employeesList);
       // call function to run inquirer prompt question for selecting manager and employee
@@ -422,7 +422,9 @@ class Query {
             return;
           }
           console.log(chalk.bold.bgCyan("\n Success!"));
-          console.log(`\n Updated manager ${params[0]} of employee ${params[1]}`);
+          console.log(
+            `\n Updated manager ${params[0]} of employee ${params[1]}`
+          );
           this.viewEmployees();
         });
       });
@@ -442,8 +444,8 @@ class Query {
             console.log({ error: err.message });
             return;
           }
-          if(!rows.length){
-            console.log('there are no departments to select');
+          if (!rows.length) {
+            console.log("there are no departments to select");
             this.main();
             return;
           }
@@ -471,8 +473,8 @@ class Query {
             console.log({ error: err.message });
             return;
           }
-          if(!rows.length){
-            console.log('there are no roles to select');
+          if (!rows.length) {
+            console.log("there are no roles to select");
             this.main();
             return;
           }
@@ -500,8 +502,8 @@ class Query {
             console.log({ error: err.message });
             return;
           }
-          if(!rows.length){
-            console.log('there are no employees to select');
+          if (!rows.length) {
+            console.log("there are no employees to select");
             this.main();
             return;
           }
