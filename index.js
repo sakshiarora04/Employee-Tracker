@@ -318,19 +318,17 @@ addDepartment(){
      // function to create array of managers by passing sql command and column name
      this.getArray(sqlManager,'manager')
     .then((managerList)=>{ 
-      managerList.push('No manager');     
-      //create array of objects containing name and value to get particular id of selected manager------- without generating array of objects- returned incorrect value in case of managers of same name
-      const mList=this.createArrOfObjects(managerList);      
+      managerList.push('No Manager');     
       //generate array of two arrays-rolelist and managerlist and pass to ask questions 
-        employeeArr.push(mList);
+        employeeArr.push(managerList);
          // call function to run inquirer prompt question for inputing employee first and last name, select title and select manager
         cli.addEmployeeQuestions(employeeArr)
         .then((body)=>{    
            // sql command to  insert new employee name into table employee  in selected role and  manager    
            const sql = `INSERT INTO employee (first_name,last_name,role_id,manager_id)
-            VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),?)`;
+            VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),(SELECT e.id from employee e WHERE CONCAT(e.first_name," ",e.last_name)=?))`;
             //input from inquirer asked questions
-            
+            console.log(body.manager)
           const params = [body.first, body.last, body.role, body.manager];
           db.query(sql, params, (err, result) => {
                     if (err) {
@@ -353,28 +351,23 @@ updateEmployeeRole() {
     const sqlEmployee='SELECT CONCAT(first_name," ",last_name) As emp FROM employee';
       // function to create array of roles by passing sql command and column name
     this.getArray(sqlRole,'title')
-    .then((roleList)=>{
-      //create array of objects containing name and value to get particular id of selected role------- without generating array of objects- can return role of other non-selected department
-      const rList=this.createArrOfObjects(roleList);
-      empRoleArr.push(rList);
+    .then((roleList)=>{      
+      empRoleArr.push(roleList);
     })
       // function to create array of employees by passing sql command and column name
     this.getArray(sqlEmployee,'emp')
     .then((employeeList)=>{
-      //create array of objects containing name and value to get particular id of selected employee------- without generating array of objects- can return employee with same name
-      const empList=this.createArrOfObjects(employeeList);
        //generate array of two arrays-rolelist and employeelist and pass to ask questions 
-      empRoleArr.push(empList);
+      empRoleArr.push(employeeList);
        // call function to run inquirer prompt question for selecting title and employee
       cli.updateEmployee(empRoleArr)
       .then((body)=>{ 
         // sql command to update title of selected employee         
          const sql = `UPDATE employee
-         SET role_id=?
-         WHERE id=?`;
+         SET role_id=(SELECT id FROM role WHERE title=?)
+         WHERE id=(SELECT e.id FROM (SELECT * FROM employee) AS e WHERE CONCAT(e.first_name," ",e.last_name)=?)`;
          // got input as id from selecting options
-        const params = [body.newRole, body.employeeName];
-        console.log(params)
+        const params = [body.newRole, body.employeeName];       
         db.query(sql, params, (err, result) => {
                   if (err) {
                     console.log(err.message);
@@ -396,24 +389,20 @@ updateEmployeeManagers() {
     const sqlEmployee='SELECT CONCAT(first_name," ",last_name) As emp FROM employee ORDER BY id';
        // function to create array of managers by passing sql command and column name
     this.getArray(sqlManager,'manager')
-    .then((managerList)=>{
-      managerList.push('No manager');
-      //create array of objects containing name and value to get particular id of selected manager------- without generating array of objects- can return manager with same name
-      const manList=this.createArrOfObjects(managerList);
-      empArr.push(manList);
+    .then((managerList)=>{  
+      managerList.push('No Manager'); 
+      empArr.push(managerList);
     })
     // function to create array of employees by passing sql command and column name
     this.getArray(sqlEmployee,'emp')
-    .then((employeesList)=>{
-      const empList=this.createArrOfObjects(employeesList);
-      //generate array of two arrays-emplist and managerlist and pass to ask questions 
-      empArr.push(empList);
+    .then((employeesList)=>{      
+      empArr.push(employeesList);
        // call function to run inquirer prompt question for selecting manager and employee
         cli.updateEmpManager(empArr)
         .then((body)=>{          
            const sql = `Update employee 
-           SET manager_id=?
-           WHERE id=?`;
+           SET manager_id=(SELECT emp.id FROM (SELECT * FROM employee) AS emp  WHERE CONCAT(emp.first_name," ",emp.last_name)=?)
+           WHERE id=(SELECT e.id FROM (SELECT * FROM employee) AS e  WHERE CONCAT(e.first_name," ",e.last_name)=?)`;
            // got input as id from selecting options
           const params = [body.newManager, body.employeeName];  
            // if employee and manager id is same ---Invalid manager selected             
@@ -441,7 +430,7 @@ deleteDepartment(){
   this.getArray(sqlDepartment,'department_name')
   .then((departments)=>{
     // run function to select department to delete
-    cli.viewDepartment(departments)
+    cli.viewEmpDepartment(departments)
     .then((body)=>{
       // sql command to delete selected department
       const sql = `DELETE FROM department WHERE department_name=?`; 
@@ -486,15 +475,13 @@ deleteRole(){
 deleteEmployee(){
   const sqlemployee='SELECT CONCAT(first_name," ",last_name) AS employee FROM employee';
   this.getArray(sqlemployee,'employee')
-  .then((empList)=>{
-    // generate array of objects containing name and value-- to get particular id
-    const eList=this.createArrOfObjects(empList);
+  .then((empList)=>{    
      // run function to select employee to delete
-    cli.viewEmp(eList)
+    cli.viewEmp(empList)
     .then((body)=>{
       // sql command to delete selected employee
-      const sql = `DELETE FROM employee WHERE id=?`; 
-      // employee id from value key in object in array
+      const sql = `DELETE FROM employee WHERE CONCAT(first_name," ",last_name)=?`; 
+      // employee id from value key in object in array      
       const params = [body.empName];
       // run delete command 
   db.query(sql,params, (err, rows) => {
@@ -528,17 +515,17 @@ async getArray(sql,value){
         });
    }
   // create array of object from array of columns to select particular id
-createArrOfObjects(List){
-  let mainList=[];
-  // generate object with name and value and push into array
-  List.forEach((m,i) => {
-    const obj={};       
-    obj.name=m;
-    obj.value=i+1;
-     mainList.push(obj);
-   });
-return mainList;
-}
+// createArrOfObjects(List){
+//   let mainList=[];
+//   // generate object with name and value and push into array
+//   List.forEach((m,i) => {
+//     const obj={};       
+//     obj.name=m;
+//     obj.value=i+1;
+//      mainList.push(obj);
+//    });
+// return mainList;
+// }
 }
 
 db.connect((error) => {

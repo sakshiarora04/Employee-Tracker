@@ -60,24 +60,29 @@ To run locally on command line
 * When user select view employees by manager, then presented with list of employees of selected manager.
 * There is options to delete department, role and an employee after selecting from corresponding list of departments, roles and employees.
 
+Link to walkthrough video in google drive:
+
+https://drive.google.com/file/d/1yyaZrQlolHDVyj4ow6TBGV19qsyQ5xX6/view
+
+Link to walkthrough video in Screencastify:
+
+https://app.screencastify.com/manage/videos/5Lq38XcMqhazdMrvupHt
+
 The following images show the web application's appearance and functionality:
 
-* Homepage
+* Overview working of all options
 
-![Homepage.](./public/images/homepage.png)
+    ![Homepage.](./assets/images/overview.gif)
 
-* No notes available
+* Run application by running command npm start. 
 
-![Existing notes are listed in the left-hand column with empty fields on the right-hand side for the new note’s title and text.](./public/images/no%20notes.jpg)
+    List of options to choose
 
-* Saved notes list and new note
+    ![Select options.](./assets/images/select%20options.gif)
 
-![Note titled “Bank accounts” reads, “Open new account” with other notes listed on the left.](./public/images/notelist.jpg)
+* Quit application
 
-* db.json saved data shown in /api/notes route
-
-![/api/notes path- saved notes in db.json.](./public/images/apinotes.jpg)
-
+    ![Quit Application.](./assets/images/Quit.gif)
 
 ## Contribution
 
