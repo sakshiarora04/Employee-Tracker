@@ -9,8 +9,9 @@ Employee Tracker is command line application for managing employees data using n
 - [Usage](#usage)
 - [Contribution](#contribution)
 - [Credits](#credits)
-- [Contact Information](#contact-information) 
 - [Technologies](#technologies) 
+- [Contact Information](#contact-information) 
+
 
 ## Installation
 
