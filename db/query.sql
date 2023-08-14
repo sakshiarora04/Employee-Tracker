@@ -1,3 +1,5 @@
+-- All queries used
+
 -- SELECT * from department;
 
 -- SELECT role.id,role.title, department.department_name AS department,role.salary

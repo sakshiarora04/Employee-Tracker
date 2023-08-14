@@ -150,6 +150,11 @@ viewEmployeesByManager(){
                 if (err) {
                   console.log(err.message);
                   return;
+                }                             
+                if(!rows.length){
+                  console.log(chalk.bold.bgCyan('\n Manager has no employees'));
+                  this.main();
+                  return;
                 }
                 console.log(chalk.bold.bgCyan('\n Success!'));
                 console.table(`\n All employees of manager '${params[0]}'`, rows);    
@@ -166,7 +171,7 @@ viewEmployeesByDepartment(){
   this.getArray(sqlDepartment,'department_name')
   .then((departments)=>{
      // call function to run inquirer prompt question for selecting department 
-    cli.viewDepartment(departments)
+    cli.viewEmpDepartment(departments)
       .then((body)=>{  
          // sql command to get list of employees of selected department        
         const sql = `SELECT e.id,CONCAT(e.first_name," ",e.last_name) AS Employees, r.title FROM employee e
@@ -315,7 +320,7 @@ addDepartment(){
     .then((managerList)=>{ 
       managerList.push('No manager');     
       //create array of objects containing name and value to get particular id of selected manager------- without generating array of objects- returned incorrect value in case of managers of same name
-      const mList=this.createArrOfObjects(managerList);
+      const mList=this.createArrOfObjects(managerList);      
       //generate array of two arrays-rolelist and managerlist and pass to ask questions 
         employeeArr.push(mList);
          // call function to run inquirer prompt question for inputing employee first and last name, select title and select manager
@@ -325,6 +330,7 @@ addDepartment(){
            const sql = `INSERT INTO employee (first_name,last_name,role_id,manager_id)
             VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),?)`;
             //input from inquirer asked questions
+            
           const params = [body.first, body.last, body.role, body.manager];
           db.query(sql, params, (err, result) => {
                     if (err) {
