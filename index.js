@@ -1,16 +1,17 @@
+//require packages
 const db = require("./config/connection");
 const cTable=require('console.table');
 const chalk = require('chalk');
 const boxen = require('boxen');
 const cfonts = require('cfonts');
 const CLI = require("./lib/cli.js");
+// create instance
 const cli = new CLI();
-
 class Query {
   main() {
     cli
       .run()
-      .then((res) => {
+      .then((res) => {        
         switch (res.choices) {
           case "View all Departments":
             this.viewDepartments();
@@ -71,24 +72,29 @@ class Query {
   }
   // View all departments
    viewDepartments() {
-    const sql = `SELECT id, department_name AS title FROM department ORDER BY id`;      
+    const sql = `SELECT id, department_name AS title FROM department ORDER BY id`;
+    // runs sql command and return rows of data
       db.query(sql, (err, rows) => {
         if (err) {
           console.log({ error: err.message });
           return;
         }
-        console.log(chalk.bold.bgCyan('\n Success!'))
+        console.log(chalk.bold.bgCyan('\n Success!'));
+        // display data in table form
         console.table("\n  All Departments", rows);  
         this.main();       
       });      
   }
- //View all roles
+
+ // View all roles
  viewRoles(){
+  // sql command to get title,salary of all departments by joining tables
   const sql = `SELECT role.id,role.title, department.department_name AS department,role.salary
   FROM role
   LEFT JOIN department
   ON role.department_id = department.id
   ORDER BY role.id`;
+  // runs sql command and return rows of data
   db.query(sql, (err, rows) => {
     if (err) {
       console.log({ error: err.message });
@@ -100,8 +106,10 @@ class Query {
   }); 
   
  }
-//View all employees
+
+// View all employees
 viewEmployees(){
+  // sql command to get title,salary, department, employee name of all employees by joining tables
   const sql = `SELECT e.id, e.first_name, e.last_name, r.title, d.department_name AS department, r.salary, CONCAT(m.first_name," ",m.last_name) As manager
   FROM employee e
   LEFT JOIN role r
@@ -110,7 +118,7 @@ viewEmployees(){
   ON r.department_id= d.id
   LEFT JOIN employee m
   ON e.manager_id= m.id`;
-
+    // runs sql command and return rows of data
   db.query(sql, (err, rows) => {
     if (err) {
       console.log({ error: err.message });
@@ -121,18 +129,23 @@ viewEmployees(){
     this.main();    
   });
 }
-//View employees by manager
+// View employees by manager
 viewEmployeesByManager(){
- 
+ // sql command to generate list of managers
   const sqlManager='SELECT CONCAT(first_name," ",last_name) As manager FROM employee';
+  // function to create array of managers by passing sql command and column name
   this.getArray(sqlManager,'manager')
-  .then((managerList)=>{    
+  .then((managerList)=>{  
+    // call function to run inquirer prompt question for selecting manager  
     cli.viewManager(managerList)
-    .then((body)=>{          
+    .then((body)=>{    
+      // sql command to get rows of employees of selected manager      
       const sql = `SELECT id, CONCAT(first_name," ",last_name) AS Employee
       FROM employee 
       WHERE manager_id=(SELECT id FROM (SELECT * FROM employee) AS emp WHERE CONCAT(emp.first_name," ",emp.last_name)=?)`;
+      // selected manager in body.managerName
       const params = [body.managerName];
+      // runs sql command and return rows of data
       db.query(sql, params, (err, rows) => {
                 if (err) {
                   console.log(err.message);
@@ -147,11 +160,15 @@ viewEmployeesByManager(){
 }
 // View employees by department
 viewEmployeesByDepartment(){  
+  // sql command to generate list of departments
   const sqlDepartment='SELECT department_name FROM department ORDER BY id';
+   // function to create array of departments by passing sql command and column name
   this.getArray(sqlDepartment,'department_name')
   .then((departments)=>{
+     // call function to run inquirer prompt question for selecting department 
     cli.viewDepartment(departments)
-      .then((body)=>{          
+      .then((body)=>{  
+         // sql command to get list of employees of selected department        
         const sql = `SELECT e.id,CONCAT(e.first_name," ",e.last_name) AS Employees, r.title FROM employee e
         JOIN role r
         ON e.role_id=r.id
@@ -159,7 +176,9 @@ viewEmployeesByDepartment(){
         ON r.department_id=d.id
         WHERE d.department_name=?
         ORDER BY e.first_name`;
+        // selected department in body.departmentName
         const params = [body.departmentName];
+         // runs sql command and return rows of data
         db.query(sql, params, (err, rows) => {
                   if (err) {
                     console.log(err.message);
@@ -174,23 +193,28 @@ viewEmployeesByDepartment(){
 }
 //View the total utilized budget of a department
 viewEmployeesBudget(){
-  
+  // sql command to generate list of departments
   const sqlDepartment='SELECT department_name FROM department ORDER BY id';
+  // function to create array of departments by passing sql command and column name
   this.getArray(sqlDepartment,'department_name')
   .then((departments)=>{
+     // call function to run inquirer prompt question for selecting department
     cli.viewDepartment(departments)
     .then((body)=>{            
       if(body.department==='no'){       
         this.viewAllEmployeesBudget();
         return;
       }   
+      // sql command to get sum of salaries of selected department 
       const sql = `SELECT d.department_name AS Department, SUM(r.salary) AS Total_Salaries FROM employee e
       JOIN role r
       ON e.role_id=r.id
       JOIN department d   
       ON r.department_id=d.id
-      WHERE d.department_name=?`;      
-      const params = [body.departmentName];    
+      WHERE d.department_name=?`;
+      // selected department in body.departmentName      
+      const params = [body.departmentName];  
+       // runs sql command and return rows of data  
       db.query(sql, params, (err, rows) => {
                 if (err) {
                   console.log(err.message);
@@ -205,6 +229,7 @@ viewEmployeesBudget(){
 }
 //view all departments Budget
 viewAllEmployeesBudget(){
+  // sql command to get sum of salaries of all departments
   const sqlBudget=`SELECT d.department_name AS Department, SUM(r.salary) AS Total_Salaries FROM employee e
   JOIN role r
   ON e.role_id=r.id
@@ -212,7 +237,7 @@ viewAllEmployeesBudget(){
   ON r.department_id=d.id
   GROUP BY d.department_name
   ORDER BY d.id`;
- 
+  // runs sql command and return rows of data
       db.query(sqlBudget, (err, rows) => {
                 if (err) {
                   console.log(err.message);
@@ -221,14 +246,14 @@ viewAllEmployeesBudget(){
                 console.log(chalk.bold.bgCyan('\n Success!'));
                 console.table(`\n Total utilized budget of departments`, rows);    
                 this.main();                   
-              });                 
-   
-  
+              });
 }
 //Add department
 addDepartment(){
+  // sql command to  insert new department into table
   const sql = `INSERT INTO department (department_name)
     VALUES (?)`;
+     // call function to run inquirer prompt question for inputing department name
     cli.addDepartmentQuestions()
     .then((body)=>{
       const params = [body.department]; 
@@ -246,15 +271,20 @@ addDepartment(){
 
   //Add role
   addRole() { 
-    const sql = `SELECT department_name FROM department ORDER BY id`;  
+     // sql command to generate list of departments
+    const sql = `SELECT department_name FROM department ORDER BY id`; 
+      // function to create array of departments by passing sql command and column name
      this.getArray(sql,'department_name')
     .then((departmentList)=>{
+      // call function to run inquirer prompt question for inputing salary, title and select department
      cli.addRoleQuestions(departmentList)
         .then((body) => {
+          // sql command to  insert new role and salary into table role in selected department
           const sql = `INSERT INTO role(title,salary,department_id)
         VALUES (?,?,(SELECT id FROM department WHERE department_name=?))`;
-          const params = [body.role, body.salary, body.department];
-
+        //input from inquirer asked questions
+          const params = [body.role, body.salary, body.department];          
+     // runs sql command and return rows of data
           db.query(sql, params, (err, result) => {
             if (err) {
               console.log(err.message);
@@ -270,22 +300,30 @@ addDepartment(){
   }
   // Add Employee
   addEmployee() {
-    const employeeArr=[];    
+    const employeeArr=[];   
+    // sql command to generate list of roles 
     const sqlRole='SELECT title from role ORDER BY id';
+    // sql command to generate list of manager list
     const sqlManager='SELECT CONCAT(first_name," ",last_name) As manager FROM employee';
+      // function to create array of roles by passing sql command and column name
     this.getArray(sqlRole,'title')
     .then((roleList)=>{      
       employeeArr.push(roleList)
      });
+     // function to create array of managers by passing sql command and column name
      this.getArray(sqlManager,'manager')
     .then((managerList)=>{ 
+      //create array of objects containing name and value to get particular id of selected manager------- without generating array of objects- returned incorrect value in case of managers of same name
       const mList=this.createArrOfObjects(managerList);
+      //generate array of two arrays-rolelist and managerlist and pass to ask questions 
         employeeArr.push(mList);
-        console.log(employeeArr)
+         // call function to run inquirer prompt question for inputing employee first and last name, select title and select manager
         cli.addEmployeeQuestions(employeeArr)
-        .then((body)=>{          
+        .then((body)=>{    
+           // sql command to  insert new employee name into table employee  in selected role and  manager    
            const sql = `INSERT INTO employee (first_name,last_name,role_id,manager_id)
             VALUES( ?,?,(SELECT role.id from role  WHERE role.title=?),?)`;
+            //input from inquirer asked questions
           const params = [body.first, body.last, body.role, body.manager];
           db.query(sql, params, (err, result) => {
                     if (err) {
@@ -301,23 +339,33 @@ addDepartment(){
 }
 //Update Employee role
 updateEmployeeRole() {
-  const empRoleArr=[];     
+  const empRoleArr=[];  
+   // sql command to generate list of roles    
   const sqlRole='SELECT title from role ORDER BY id';
+  // sql command to generate list of employee list
     const sqlEmployee='SELECT CONCAT(first_name," ",last_name) As emp FROM employee';
+      // function to create array of roles by passing sql command and column name
     this.getArray(sqlRole,'title')
     .then((roleList)=>{
+      //create array of objects containing name and value to get particular id of selected role------- without generating array of objects- can return role of other non-selected department
       const rList=this.createArrOfObjects(roleList);
       empRoleArr.push(rList);
     })
+      // function to create array of employees by passing sql command and column name
     this.getArray(sqlEmployee,'emp')
     .then((employeeList)=>{
+      //create array of objects containing name and value to get particular id of selected employee------- without generating array of objects- can return employee with same name
       const empList=this.createArrOfObjects(employeeList);
+       //generate array of two arrays-rolelist and employeelist and pass to ask questions 
       empRoleArr.push(empList);
+       // call function to run inquirer prompt question for selecting title and employee
       cli.updateEmployee(empRoleArr)
-      .then((body)=>{          
+      .then((body)=>{ 
+        // sql command to update title of selected employee         
          const sql = `UPDATE employee
          SET role_id=?
          WHERE id=?`;
+         // got input as id from selecting options
         const params = [body.newRole, body.employeeName];
         console.log(params)
         db.query(sql, params, (err, result) => {
@@ -331,30 +379,36 @@ updateEmployeeRole() {
                 });                 
       });
     }); 
-
 }
 // Update employee managers
 updateEmployeeManagers() {
   const empArr=[];   
+  // sql command to generate list of managers
   const sqlManager='SELECT CONCAT(first_name," ",last_name) AS manager from employee';
+  // sql command to generate list of employees
     const sqlEmployee='SELECT CONCAT(first_name," ",last_name) As emp FROM employee ORDER BY id';
+       // function to create array of managers by passing sql command and column name
     this.getArray(sqlManager,'manager')
     .then((managerList)=>{
+      //create array of objects containing name and value to get particular id of selected manager------- without generating array of objects- can return manager with same name
       const manList=this.createArrOfObjects(managerList);
       empArr.push(manList);
     })
+    // function to create array of employees by passing sql command and column name
     this.getArray(sqlEmployee,'emp')
     .then((employeesList)=>{
       const empList=this.createArrOfObjects(employeesList);
+      //generate array of two arrays-emplist and managerlist and pass to ask questions 
       empArr.push(empList);
-      
+       // call function to run inquirer prompt question for selecting manager and employee
         cli.updateEmpManager(empArr)
         .then((body)=>{          
            const sql = `Update employee 
            SET manager_id=?
            WHERE id=?`;
+           // got input as id from selecting options
           const params = [body.newManager, body.employeeName];  
-                         
+           // if employee and manager id is same ---Invalid manager selected             
           if(params[0]===params[1]){
             console.log('Invalid manager selected');
             this.main();
@@ -378,11 +432,13 @@ deleteDepartment(){
   const sqlDepartment='SELECT department_name FROM department ORDER BY id';
   this.getArray(sqlDepartment,'department_name')
   .then((departments)=>{
+    // run function to select department to delete
     cli.viewDepartment(departments)
     .then((body)=>{
+      // sql command to delete selected department
       const sql = `DELETE FROM department WHERE department_name=?`; 
       const params = [body.departmentName]; 
-  db.query(sql,params, (err, rows) => {
+    db.query(sql,params, (err, rows) => {
     if (err) {
       console.log({ error: err.message });
       return;
@@ -398,10 +454,13 @@ deleteDepartment(){
 deleteRole(){
   const sqlRole='SELECT title FROM role ORDER BY id';
   this.getArray(sqlRole,'title')
-  .then((roleList)=>{   
+  .then((roleList)=>{  
+    // run function to select role to delete 
     cli.viewRole(roleList)
     .then((body)=>{
-      const sql = `DELETE FROM role WHERE title=?`; 
+       // sql command to delete selected role
+      const sql = `DELETE FROM role WHERE title=?`;
+       // role id from value key in object in array 
       const params = [body.roleName]; 
   db.query(sql,params, (err, rows) => {
     if (err) {
@@ -420,11 +479,16 @@ deleteEmployee(){
   const sqlemployee='SELECT CONCAT(first_name," ",last_name) AS employee FROM employee';
   this.getArray(sqlemployee,'employee')
   .then((empList)=>{
+    // generate array of objects containing name and value-- to get particular id
     const eList=this.createArrOfObjects(empList);
+     // run function to select employee to delete
     cli.viewEmp(eList)
     .then((body)=>{
+      // sql command to delete selected employee
       const sql = `DELETE FROM employee WHERE id=?`; 
-      const params = [body.empName]; 
+      // employee id from value key in object in array
+      const params = [body.empName];
+      // run delete command 
   db.query(sql,params, (err, rows) => {
     if (err) {
       console.log({ error: err.message });
@@ -437,11 +501,13 @@ deleteEmployee(){
     });
   }); 
 }
+// function to get array by passing sql and column name
 async getArray(sql,value){
   let arr = [];
   return new Promise((resolve, reject) => {    
         db.promise().query(sql)
          .then(([rows])=>{
+          // generate array of column from array of objects containing column
           arr = rows.map((row) => {
             return row[value];
           });
@@ -451,12 +517,12 @@ async getArray(sql,value){
           console.log(err);
           reject();
          });
-
         });
    }
-   
+  // create array of object from array of columns to select particular id
 createArrOfObjects(List){
   let mainList=[];
+  // generate object with name and value and push into array
   List.forEach((m,i) => {
     const obj={};       
     obj.name=m;
@@ -466,10 +532,11 @@ createArrOfObjects(List){
 return mainList;
 }
 }
+
 db.connect((error) => {
   if (error) throw error;
   console.log(chalk.red.bold(`====================================================================================`));
-
+  // options to design font
   const options= {
     font: 'pallet',              // define the font face
     align: 'left',              // define text alignment
@@ -484,14 +551,14 @@ db.connect((error) => {
     transitionGradient: false,  // define if this is a transition between colors directly
     env: 'node'                 // define the environment cfonts is being executed in
   }
-
+  // boxen to generate box
   console.log(boxen(cfonts.render(`EMPLOYEE \n TRACKER`,options).string, { titleAlignment: 'center',padding: 1,
   margin: 1,
   borderStyle: "classic",
   borderColor: "cyan",
-
   }));
   console.log(chalk.red.bold(`====================================================================================`));
+  // create query instance
   const query = new Query();
   query.main();
 });
