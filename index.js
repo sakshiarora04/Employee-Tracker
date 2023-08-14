@@ -27,7 +27,7 @@ class Query {
           case "View employees by department":
             this.viewEmployeesByDepartment();
             break;
-          case "View the total utilized budget of a department":
+          case "View the total utilized budget of a department or all departments":
             this.viewEmployeesBudget();
             break;
           case "Update Employee Role":
@@ -179,14 +179,18 @@ viewEmployeesBudget(){
   this.getArray(sqlDepartment,'department_name')
   .then((departments)=>{
     cli.viewDepartment(departments)
-    .then((body)=>{          
+    .then((body)=>{            
+      if(body.department==='no'){       
+        this.viewAllEmployeesBudget();
+        return;
+      }   
       const sql = `SELECT d.department_name AS Department, SUM(r.salary) AS Total_Salaries FROM employee e
       JOIN role r
       ON e.role_id=r.id
       JOIN department d   
       ON r.department_id=d.id
-      WHERE d.department_name=?`;
-      const params = [body.departmentName];
+      WHERE d.department_name=?`;      
+      const params = [body.departmentName];    
       db.query(sql, params, (err, rows) => {
                 if (err) {
                   console.log(err.message);
@@ -198,6 +202,28 @@ viewEmployeesBudget(){
               });                 
     }); 
   });  
+}
+//view all departments Budget
+viewAllEmployeesBudget(){
+  const sqlBudget=`SELECT d.department_name AS Department, SUM(r.salary) AS Total_Salaries FROM employee e
+  JOIN role r
+  ON e.role_id=r.id
+  JOIN department d   
+  ON r.department_id=d.id
+  GROUP BY d.department_name
+  ORDER BY d.id`;
+ 
+      db.query(sqlBudget, (err, rows) => {
+                if (err) {
+                  console.log(err.message);
+                  return;
+                }
+                console.log(chalk.bold.bgCyan('\n Success!'));
+                console.table(`\n Total utilized budget of departments`, rows);    
+                this.main();                   
+              });                 
+   
+  
 }
 //Add department
 addDepartment(){
