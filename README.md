@@ -1,10 +1,7 @@
 # Employee-Tracker
 ## Description
 
-Employee Tracker is command line application for managing employees data using node.jsn inquirer and mysql. It uses sql to view, add, update and delete employees data in database. Node.js uses user input from inquirer to display results of searched query in table form.
-
-
- Note Taker is an application that can be used to write and save notes. This application will use an Express.js as back end. It will save and retrieve note data from a JSON file and it is deployed on heroku. 
+Employee Tracker is command line application for managing employees data using node.js, inquirer and mysql. It uses sql to view, add, update and delete employees data in database. Node.js uses user input from inquirer to display results of searched query in table form.
 
 ## Table of Contents
 
